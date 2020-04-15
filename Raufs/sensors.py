@@ -1,18 +1,26 @@
 from sense_hat import SenseHat
 from time import sleep
+from multiprocessing import Process
+from threading import Thread
 import threading
 import smbus
 import math
 
+
 sense = SenseHat()
 
-class CO2:
+# CO2 air sensor model.
+# start() to simulate CO2 sensor with joystick in a background thread
+class CO2(Thread):
         
         # RGB colours
         orange = [254, 110, 0]
         cyan = [0, 255, 255]
         co2_ppm = 500   # Good CO2 ppm
 
+        # Starts joystick_as_sensor() in a background thread when CO2().start() is ran
+        def run(self):
+                self.joystick_as_sensor()
 
         # Gets current CO2 ppm reading
         def get_reading(self):
@@ -34,11 +42,11 @@ class CO2:
                                         self.co2_ppm = 500
                                         sense.show_message("No fire", text_colour=self.cyan)    # Down arrow
 
-class Magnetometers:
+class Magnetometers():
         
         bus = smbus.SMBus(1)
         
-        # Some MPU6050 Registers, Values and Addresses
+        # MPU6050 Registers, Values and Addresses
         Register_A     = 0              # Address of Configuration register A
         Register_B     = 0x01           # Address of configuration register B
         Register_mode  = 0x02           # Address of mode register
@@ -52,13 +60,13 @@ class Magnetometers:
         Y_axis_H    = 0x07              # Address of Y-axis MSB data register
 
 
-        def _init_(self):
+        def __init__(self):
                 # Write to Configuration Register A
-                self.bus.write_byte_data(Device_Address, Register_A, Value_A)
+                self.bus.write_byte_data(self.Device_Address, self.Register_A, self.Value_A)
                 # Write to Configuration Register B for gain
-                self.bus.write_byte_data(Device_Address, Register_B, Value_B)
+                self.bus.write_byte_data(self.Device_Address, self.Register_B, self.Value_B)
                 # Write to mode Register for selecting mode
-                self.bus.write_byte_data(Device_Address, Register_mode, 0)
+                self.bus.write_byte_data(self.Device_Address, self.Register_mode, 0)
 
         # Get raw reading from the sensor
         def __read_raw_data(self, addr):
@@ -99,21 +107,15 @@ class Magnetometers:
         
 # Sensors class
 class Sensors():
+        
         air = CO2()
         magnets = Magnetometers()
 
-        # Air
+        def __init__(self):
+                # Start the air sensor emulator controlled by joystick
+                self.air.start()
 
-        # Simulates the air sensor, when up arrow pressed on joystick
-        # ppm rises to 8000 (fire), when down - 500 (no fire)
-        def simulate_air_sensor(self):
-                # Start a thread so it can work in background
-                thread = threading.Thread(target=self.air.joystick_as_sensor())
-                # Run in background
-                thread.daemon = True
-                thread.start()
-                thread.join()
-                print(1)
+        # Air
         
         # Air sensor readings
         def get_air_reading(self):
@@ -123,7 +125,6 @@ class Sensors():
         def is_fire(self):
                 # It is fire if the reading is over 4000 ppm
                 return self.get_air_reading() > 4000 
-
         
         # Magnets
 
@@ -135,22 +136,16 @@ class Sensors():
         def is_magnet_over(self):
                 over = []
                 for i in self.get_magnetometer_reading():
-                        if i > 80:
-                                over.append(true)
-                        else:
-                                over.append(false)
-        
-                
-        
-#ch = CO2()
-#print(2)
-#print(ch.get_reading())
-#print(ch.get_reading())
-#thread = threading.Thread(target=ch.monitor_joystick)
-#thread.start()
+                        over.append(True) if i > 80 else over.append(False)
+                return over
 
-test = Sensors()
-test.simulate_air_sensor()
-while True:
         
+# Test
+def main():
+        test = Sensors()
         print(test.get_air_reading())
+        print(test.is_fire())
+        print(test.get_magnetometer_reading())
+        print(test.is_magnet_over())
+
+#main()
