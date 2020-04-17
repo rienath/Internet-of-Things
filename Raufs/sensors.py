@@ -83,7 +83,7 @@ class Magnetometers():
         # Returns force field from HMC5883L magnetometer
         def __get_external_magnetometer(self):
                 # So all the differently calibrated magnetometers give roughly same values
-                conversion_factor = 3/13
+                conversion_factor = 2/13
                 # Read magnetometer raw value
                 x = self.__read_raw_data(self.X_axis_H)
                 z = self.__read_raw_data(self.Z_axis_H)
