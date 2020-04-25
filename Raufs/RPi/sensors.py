@@ -121,23 +121,13 @@ class Sensors():
         def get_air_reading(self):
                 return self.air.get_reading()
 
-        # True if fire is present
-        def is_fire(self):
-                # It is fire if the reading is over 4000 ppm
-                return self.get_air_reading() > 4000 
+
         
         # Magnets
 
         # List with magnetometer readings
         def get_magnetometer_reading(self):
                 return self.magnets.get_magnetometers()
-
-        # List where true is magnet over magnetometer
-        def is_magnet_over(self):
-                over = []
-                for i in self.get_magnetometer_reading():
-                        over.append(True) if i > 80 else over.append(False)
-                return over
 
         
 # Test
