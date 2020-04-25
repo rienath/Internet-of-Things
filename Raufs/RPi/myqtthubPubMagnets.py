@@ -8,27 +8,22 @@ import json
 host          = "node02.myqtthub.com"
 port          = 1883
 clean_session = True
-client_id     = "chick_indoors"
+client_id     = "magnetometers"
 user_name     = "bravogate@yopmail.com"
 password      = "8sLBIaF9-m5OvAlEA"
-# The sensor module that collects and processes the data
+# The sensor module that collects the data
 magnetometers = sensors.Sensors()
 
 def on_connect (client, userdata, flags, rc):
     """ Callback called when connection/reconnection is detected """
     print ("Connect %s result is: %s" % (host, rc))
-    
-    # With Paho, always subscribe at on_connect (if you want to
-    # subscribe) to ensure you resubscribe if connection is
-    # lost.
-    client.subscribe("aberdeen/animalhouse/chicken/1/inbed")
 
     if rc == 0:
         client.connected_flag = True
         print ("connected OK")
         # Publish and retain a message describing magnetometers used to detect chicken with magnets attached to their legs in beds
         sensor = {"id":{2, 3}, "name":{"SenseHat Magnetometer", "HMC5883L Magnetometer"}, "type":"magnetometer", "isHostedBy":{"location":"Aberdeen"}}
-        client.publish("aberdeen/animalhouse/chicken/1/inbed", json.dumps(sensor), retain=True, qos=2)
+        client.publish("aberdeen/animalhouse/chicken/1/magnetometers", json.dumps(sensor), retain=True, qos=2)
         print(json.dumps(sensor))
         return
     
@@ -41,13 +36,13 @@ def on_message(client, userdata, msg):
     jsonStr = str(message.payload.decode("UTF-8"))
     print("Message received " + jsonStr)
 
-def publish_air_status():
+def publish_magnetometers_status():
     # Create and print JSON
-    observation = {"featureOfInterest": "chicken house 1", "property": "chicken presence on bed", "madeBySensor":"magnetometer", "resultTime":str(datetime.datetime.now()),
-                   "hasResult":{"value":magnetometers.get_magnetometer_reading(), "unit":"LSb/gauss", "chickenInBed":magnetometers.is_magnet_over()}}
+    observation = {"featureOfInterest": "chicken house 1", "property": "magnetic field under beds", "madeBySensor":"magnetometers", "resultTime":str(datetime.datetime.now()),
+                   "hasResult":{"value":magnetometers.get_magnetometer_reading(), "unit":"LSb/gauss"}}
     print(json.dumps(observation))
     # Publish JSON, qos 2
-    client.publish("aberdeen/animalhouse/chicken/1/inbed", json.dumps(observation), qos=2)
+    client.publish("aberdeen/animalhouse/chicken/1/magnetometers", json.dumps(observation), qos=2)
 
 # Define clientId, host, user and password
 client = mqtt.Client (client_id = client_id, clean_session = clean_session)
@@ -75,7 +70,7 @@ publish_time = 10
 
 try:
     while True:
-        publish_air_status()
+        publish_magnetometers_status()
         time.sleep(publish_time)
 except KeyboardInterrupt:
     print("\nSTOPPING")

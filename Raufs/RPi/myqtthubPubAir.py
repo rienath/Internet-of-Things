@@ -8,27 +8,22 @@ import json
 host          = "node02.myqtthub.com"
 port          = 1883
 clean_session = True
-client_id     = "air"
+client_id     = "co2"
 user_name     = "bravogate@yopmail.com"
 password      = "8sLBIaF9-m5OvAlEA"
-# The sensor module that collects and processes the data
+# The sensor module that collects the data
 air           = sensors.Sensors()
 
 def on_connect (client, userdata, flags, rc):
     """ Callback called when connection/reconnection is detected """
     print ("Connect %s result is: %s" % (host, rc))
-    
-    # With Paho, always subscribe at on_connect (if you want to
-    # subscribe) to ensure you resubscribe if connection is
-    # lost.
-    client.subscribe("aberdeen/animalhouse/chicken/1/air")
 
     if rc == 0:
         client.connected_flag = True
         print ("connected OK")
-        # Publish and retain a message describing this virtual air quality sensor (fire detector)
-        sensor = {"id":1, "name":"air quality sensor", "type":"Software Fire Detector", "isHostedBy":{"location":"Aberdeen"}}
-        client.publish("aberdeen/animalhouse/chicken/1/air", json.dumps(sensor), retain=True, qos=2)
+        # Publish and retain a message describing CO2 sensor
+        sensor = {"id":1, "name":"air quality sensor", "type":"CO2 Detector", "isHostedBy":{"location":"Aberdeen"}}
+        client.publish("aberdeen/animalhouse/chicken/1/carbondioxide", json.dumps(sensor), retain=True, qos=2)
         print(json.dumps(sensor))
         return
     
@@ -41,13 +36,13 @@ def on_message(client, userdata, msg):
     jsonStr = str(message.payload.decode("UTF-8"))
     print("Message received " + jsonStr)
 
-def publish_air_status():
+def publish_carbondioxide_status():
     # Create and print JSON
-    observation = {"featureOfInterest": "chicken house 1", "property": "fire presence", "madeBySensor":"air quality sensor", "resultTime":str(datetime.datetime.now()),
-                   "hasResult":{"value":air.get_air_reading(), "unit":"CO2 parts per million", "fire":air.is_fire()}}
+    observation = {"featureOfInterest": "chicken house 1", "property": "CO2 presence", "madeBySensor":"air quality sensor", "resultTime":str(datetime.datetime.now()),
+                   "hasResult":{"value":air.get_air_reading(), "unit":"CO2 parts per million"}}
     print(json.dumps(observation))
     # Publish JSON, qos 2
-    client.publish("aberdeen/animalhouse/chicken/1/air", json.dumps(observation), qos=2)
+    client.publish("aberdeen/animalhouse/chicken/1/carbondioxide", json.dumps(observation), qos=2)
 
 # Define clientId, host, user and password
 client = mqtt.Client (client_id = client_id, clean_session = clean_session)
@@ -75,7 +70,7 @@ publish_time = 10
 
 try:
     while True:
-        publish_air_status()
+        publish_carbondioxide_status()
         time.sleep(publish_time)
 except KeyboardInterrupt:
     print("\nSTOPPING")
