@@ -10,10 +10,10 @@ OPEN_TIME = 6
 CLOSE_TIME = 20
 GATE_OPEN_CLOSE_SECONDS = 2
 
-OPEN = False
+OPEN = True
 FIRE_DETECTED = False
 #CHICKENS_MAGNETOMETER_VALUE = 0
-CHICKENS_IN_BED = False
+CHICKENS_IN_BED = True
 
 #mqtt data
 host          = "node02.myqtthub.com"
@@ -167,15 +167,13 @@ if __name__ == '__main__':
         while True :
             #publish_test_status()
             print("Checking sensor status...")
-            #print(str((((datetime.datetime.now().hour >= OPEN_TIME) and (datetime.datetime.now().hour < OPEN_TIME + 1)) or (FIRE_DETECTED == True)) and OPEN == False))
-            print(str(((((datetime.datetime.now().hour >= CLOSE_TIME) and (datetime.datetime.now().hour < CLOSE_TIME + 1)) and CHICKENS_IN_BED == True) and (FIRE_DETECTED == False)) and OPEN == True))
-            print(str(CHICKENS_IN_BED))
-            print(str(FIRE_DETECTED))
-            print(str(OPEN))
+            print("Chickens in bed: " + str(CHICKENS_IN_BED))
+            print("Fire detected: " + str(FIRE_DETECTED))
+            print("Open: " + str(OPEN))
             print()
-            if (((datetime.datetime.now().hour >= OPEN_TIME) and (datetime.datetime.now().hour < OPEN_TIME + 1)) or (FIRE_DETECTED == True)) and OPEN == False :
+            if (((datetime.datetime.now().hour >= OPEN_TIME) and (datetime.datetime.now().hour < CLOSE_TIME)) or (FIRE_DETECTED == True)) and OPEN == False :
                 open()
-            elif ((((datetime.datetime.now().hour >= CLOSE_TIME) and (datetime.datetime.now().hour < CLOSE_TIME + 1)) and CHICKENS_IN_BED == True) and (FIRE_DETECTED == False)) and OPEN == True :
+            elif (((((datetime.datetime.now().hour >= CLOSE_TIME) and (datetime.datetime.now().hour <= 24)) or ((datetime.datetime.now().hour >= 0) and (datetime.datetime.now().hour < OPEN_TIME))) and CHICKENS_IN_BED == True) and (FIRE_DETECTED == False)) and OPEN == True :
                 close()
             time.sleep(mqtt_check_time)
     except KeyboardInterrupt:
