@@ -7,19 +7,19 @@ import ssl
 import json
 
 OPEN_TIME = 6
-CLOSE_TIME = 20
-GATE_OPEN_CLOSE_SECONDS = 3
+CLOSE_TIME = 13
+GATE_OPEN_CLOSE_SECONDS = 2
 
-OPEN = False
-FIRE_DETECTED = False
-CHICKENS_MAGNETOMETER_VALUE = False
-CHICKENS_IN_BED_MAGNITUDE = 50000
+OPEN = True
+FIRE_DETECTED = "False"
+#CHICKENS_MAGNETOMETER_VALUE = 0
+CHICKENS_IN_BED = "true"
 
 #mqtt data
 host          = "node02.myqtthub.com"
 port          = 1883
 clean_session = True
-client_id     = "gate"
+client_id     = "motor"
 user_name     = "bravogate@yopmail.com"
 password      = "8sLBIaF9-m5OvAlEA"
 
@@ -30,8 +30,8 @@ def on_connect (client, userdata, flags, rc):
     # With Paho, always subscribe at on_connect (if you want to
     # subscribe) to ensure you resubscribe if connection is
     # lost.
-    client.subscribe("aberdeen/animalhouse/chicken/1/air")
-    client.subscribe("aberdeen/animalhouse/chicken/1/magnetometers")
+    client.subscribe("aberdeen/animalhouse/chicken/1/fire")
+    client.subscribe("aberdeen/animalhouse/chicken/1/chickeninbed")
 
     if rc == 0:
         client.connected_flag = True
@@ -47,8 +47,10 @@ def on_message(client, userdata, msg):
     jsonStr = str(message.payload.decode("UTF-8"))
     print("Message received " + jsonStr)
     jsonStr = json.loads(jsonStr)
-    FIRE_DETECTED = jsonStr.get("fire")
-    CHICKENS_MAGNETOMETER_VALUE = jsonStr.get("value")
+    if jsonStr.get("property") == "fire":
+        FIRE_DETECTED = jsonStr.get("value")
+    else :
+        CHICKENS_IN_BED = jsonStr.get("value")
 
 
 
@@ -128,10 +130,10 @@ if __name__ == '__main__':
     setup()
     try:
         while True :
-            if ((datetime.datetime.now().hour >= OPEN_TIME and OPEN == False) and (datetime.datetime.now().hour < OPEN_TIME + 1 and OPEN == False)) or FIRE_DETECTED
+            if ((datetime.datetime.now().hour >= OPEN_TIME and datetime.datetime.now().hour < OPEN_TIME + 1) or (FIRE_DETECTED == "True")) and OPEN == False :
                 open()
-            else ((datetime.datetime.now().hour >= CLOSE_TIME and OPEN == True) and (datetime.datetime.now().hour < CLOSE_TIME + 1 and OPEN == True)) and abs(CHICKENS_MAGNETOMETER_VALUE) > CHICKENS_IN_BED_MAGNITUDE
+            elif ((datetime.datetime.now().hour >= CLOSE_TIME and datetime.datetime.now().hour < CLOSE_TIME + 1) and CHICKENS_IN_BED == "True") and (FIRE_DETECTED == "False") and OPEN == False :
                 close()
-        time.sleep(mqtt_check_time)
+            time.sleep(mqtt_check_time)
     except KeyboardInterrupt:
         destroy()
