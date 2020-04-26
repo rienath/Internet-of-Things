@@ -13,7 +13,7 @@ GATE_OPEN_CLOSE_SECONDS = 2
 OPEN = True
 FIRE_DETECTED = "False"
 #CHICKENS_MAGNETOMETER_VALUE = 0
-CHICKENS_IN_BED = "true"
+CHICKENS_IN_BED = "True"
 
 #mqtt data
 host          = "node02.myqtthub.com"
@@ -43,14 +43,13 @@ def on_connect (client, userdata, flags, rc):
     sys.exit (-1)
 
 def on_message(client, userdata, msg):
-    """ Callback called for every PUBLISH received """
     jsonStr = str(message.payload.decode("UTF-8"))
     print("Message received " + jsonStr)
-    jsonStr = json.loads(jsonStr)
-    if jsonStr.get("property") == "fire":
-        FIRE_DETECTED = jsonStr.get("value")
+    message = json.loads(jsonStr)
+    if message["property"] == "fire":
+        FIRE_DETECTED = message["value"]
     else :
-        CHICKENS_IN_BED = jsonStr.get("value")
+        CHICKENS_IN_BED = message["value"]
 
 
 
@@ -68,7 +67,10 @@ port = 8883
 
 # Connect using secure MQTT with keepalive 60
 client.connect (host, port, keepalive = 60)
+client.loop_start()
+
 client.connected_flag = False
+
 while not client.connected_flag:
     client.loop()
     time.sleep (1)
