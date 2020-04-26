@@ -7,13 +7,13 @@ import ssl
 import json
 
 OPEN_TIME = 6
-CLOSE_TIME = 13
+CLOSE_TIME = 20
 GATE_OPEN_CLOSE_SECONDS = 2
 
-OPEN = True
-FIRE_DETECTED = "False"
+OPEN = False
+FIRE_DETECTED = False
 #CHICKENS_MAGNETOMETER_VALUE = 0
-CHICKENS_IN_BED = "True"
+CHICKENS_IN_BED = False
 
 #mqtt data
 host          = "node02.myqtthub.com"
@@ -31,7 +31,8 @@ def on_connect (client, userdata, flags, rc):
     # subscribe) to ensure you resubscribe if connection is
     # lost.
     client.subscribe("aberdeen/animalhouse/chicken/1/fire")
-    client.subscribe("aberdeen/animalhouse/chicken/1/chickeninbed")
+    client.subscribe("aberdeen/animalhouse/chicken/1/inbed")
+    client.subscribe("aberdeen/animalhouse/chicken/1/test")
 
     if rc == 0:
         client.connected_flag = True
@@ -43,15 +44,42 @@ def on_connect (client, userdata, flags, rc):
     sys.exit (-1)
 
 def on_message(client, userdata, msg):
-    jsonStr = str(message.payload.decode("UTF-8"))
-    print("Message received " + jsonStr)
+    jsonStr = str(msg.payload.decode("UTF-8"))
+    print("MESSEGE RECEIVED")
+    print(jsonStr)
+    print()
+    global FIRE_DETECTED
+    global CHICKENS_IN_BED
+    
     message = json.loads(jsonStr)
+    
     if message["property"] == "fire":
-        FIRE_DETECTED = message["value"]
+        if message["hasResult"]["value"] == "True":
+            FIRE_DETECTED = True
+            print("fire")
+        else :
+            FIRE_DETECTED = False
+            print("no fire")
+    elif message["property"] == "animal in bed":
+        print(message["hasResult"]["value"]);
+        values = message["hasResult"]["value"];
+        CHICKENS_IN_BED = True;
+        
+        #check all chickens in bed
+        for i in values:
+            if i == "False":
+                CHICKENS_IN_BED = False
+                return
     else :
-        CHICKENS_IN_BED = message["value"]
+        print(message["hasResult"]["value"])
 
-
+#testing mqtt
+def publish_test_status():
+    print("...Publishing Test Status...")
+    observation = {"featureOfInterest": "chicken house 1", "property": "Test", "resultTime":str(datetime.datetime.now()), "hasResult":{"value":"Test"}}
+    print(json.dumps(observation)) 
+    client.publish("aberdeen/animalhouse/chicken/1/test", json.dumps(observation))
+    print()
 
 # Define clientId, host, user and password
 client = mqtt.Client (client_id = client_id, clean_session = clean_session)
@@ -98,6 +126,8 @@ def loop():
 
 def open():
     print("opening")
+    
+    global OPEN
 
     GPIO.output(Motor1A, GPIO.HIGH)
     GPIO.output(Motor1B, GPIO.LOW)
@@ -108,10 +138,13 @@ def open():
     GPIO.output(Motor1E, GPIO.LOW)
 
     OPEN = True
+    
 
 def close():
     print("closing")
 
+    global OPEN
+    
     GPIO.output(Motor1A, GPIO.LOW)
     GPIO.output(Motor1B, GPIO.HIGH)
     GPIO.output(Motor1E, GPIO.HIGH)
@@ -132,10 +165,20 @@ if __name__ == '__main__':
     setup()
     try:
         while True :
-            if ((datetime.datetime.now().hour >= OPEN_TIME and datetime.datetime.now().hour < OPEN_TIME + 1) or (FIRE_DETECTED == "True")) and OPEN == False :
+            #publish_test_status()
+            print("Checking sensor status...")
+            #print(str((((datetime.datetime.now().hour >= OPEN_TIME) and (datetime.datetime.now().hour < OPEN_TIME + 1)) or (FIRE_DETECTED == True)) and OPEN == False))
+            print(str(((((datetime.datetime.now().hour >= CLOSE_TIME) and (datetime.datetime.now().hour < CLOSE_TIME + 1)) and CHICKENS_IN_BED == True) and (FIRE_DETECTED == False)) and OPEN == True))
+            print(str(CHICKENS_IN_BED))
+            print(str(FIRE_DETECTED))
+            print(str(OPEN))
+            print()
+            if (((datetime.datetime.now().hour >= OPEN_TIME) and (datetime.datetime.now().hour < OPEN_TIME + 1)) or (FIRE_DETECTED == True)) and OPEN == False :
                 open()
-            elif ((datetime.datetime.now().hour >= CLOSE_TIME and datetime.datetime.now().hour < CLOSE_TIME + 1) and CHICKENS_IN_BED == "True") and (FIRE_DETECTED == "False") and OPEN == False :
+            elif ((((datetime.datetime.now().hour >= CLOSE_TIME) and (datetime.datetime.now().hour < CLOSE_TIME + 1)) and CHICKENS_IN_BED == True) and (FIRE_DETECTED == False)) and OPEN == True :
                 close()
             time.sleep(mqtt_check_time)
     except KeyboardInterrupt:
         destroy()
+        client.disconnect()
+        client.loop_stop()
