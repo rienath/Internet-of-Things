@@ -66,7 +66,7 @@ while not client.connected_flag:
 print('\nPublishing data.\n\nPress ctrl+c to stop\n')
 
 # Publish every publish_time seconds
-publish_time = 10
+publish_time = 30
 
 try:
     while True:
