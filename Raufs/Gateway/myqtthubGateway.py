@@ -86,14 +86,14 @@ def publish_fire_status(time, status):
     print("...Publishing Fire Status...")
     observation = {"featureOfInterest": "chicken house 1", "property": "fire", "madeBySensor":"Software Fire Sensor", "resultTime":time, "hasResult":{"value":str(status)}}
     print(json.dumps(observation)) 
-    client.publish("aberdeen/animalhouse/chicken/1/fire", json.dumps(observation))
+    client.publish("aberdeen/animalhouse/chicken/1/fire", json.dumps(observation), qos=2)
     print()
 
 def publish_chicken_status(time, status):
     print("...Publishing Chicken In Beds Status...")
     observation = {"featureOfInterest": "chicken house 1", "property": "animal in bed", "madeBySensor":"Software Animal Sensor", "resultTime":time, "hasResult":{"value":str(status)}}
     print(json.dumps(observation)) 
-    client.publish("aberdeen/animalhouse/chicken/1/inbed", json.dumps(observation))
+    client.publish("aberdeen/animalhouse/chicken/1/inbed", json.dumps(observation), qos=2)
     print()
 
 # Define clientId, host, user and password
@@ -125,11 +125,6 @@ except KeyboardInterrupt:
     client.disconnect()
     client.loop_stop()
 
-# publish message (optionally configuring qos=1, qos=2 and retain=True/False)
-#ret = client.publish ("some/message/to/publish", "{'status' : 'on'}")
-#client.loop ()
 
-#print ("Publish operation finished with ret=%s" % ret)
-
-# close connection
-#client.disconnect ()
+# Close connection
+client.disconnect ()
