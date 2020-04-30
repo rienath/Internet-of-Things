@@ -2,6 +2,7 @@ import paho.mqtt.client as mqtt
 import time
 import ssl
 import json
+import requests
 
 host          = "node02.myqtthub.com"
 port          = 1883
@@ -35,7 +36,6 @@ def on_connect (client, userdata, flags, rc):
         print(json.dumps(sensor_fire))
         print()
 
-
         # Publish and retain a message describing this virtual Animal Sensor
         sensor_chicken = {"id":5, "name":"animal sensor", "type":"Software Chicken Detector", "isHostedBy":{"location":"Aberdeen"}}
         client.publish("aberdeen/animalhouse/chicken/1/chickeninbed", json.dumps(sensor_chicken), retain=True, qos=2)
@@ -62,11 +62,16 @@ def on_message(client, userdata, msg):
 
     # If message is from CO2 sensor
     if sensing == "CO2 presence":
+        place = observation["featureOfInterest"]
         result = observation["hasResult"]
         value = result["value"]
 
         # It is fire if the reading is over 4000 ppm
         fire = value > 4000
+
+        # If fire, send notification to Pushbullet
+        if fire:
+            fire_notification(place)
 
         publish_fire_status(time, fire)
 
@@ -81,6 +86,11 @@ def on_message(client, userdata, msg):
                 over.append(True) if i > 80 else over.append(False)
 
         publish_chicken_status(time, over)
+
+# Send a notification that there is fire
+def fire_notification(place):
+    # Your IFTTT URL with event name, key and json parameters (values)
+    r = requests.post('https://maker.ifttt.com/trigger/fire/with/key/dPwWgLf1G3f5ub9KZD-Ws', params={"value1":str(place),"value2":"none","value3":"none"})
 
 def publish_fire_status(time, status):
     print("...Publishing Fire Status...")
