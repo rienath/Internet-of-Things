@@ -79,4 +79,4 @@ except KeyboardInterrupt:
     client.loop_stop()
 
 # Close connection
-client.disconnect ()
+client.disconnect()
