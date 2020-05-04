@@ -1,8 +1,6 @@
 from sense_hat import SenseHat
 from time import sleep
-from multiprocessing import Process
 from threading import Thread
-import threading
 import smbus
 import math
 
@@ -112,18 +110,12 @@ class Sensors():
         magnets = Magnetometers()
 
         def __init__(self):
-                # Start the air sensor emulator controlled by joystick
+                # Start the air sensor emulator controlled by joystick in another thread
                 self.air.start()
-
-        # Air
         
         # Air sensor readings
         def get_air_reading(self):
                 return self.air.get_reading()
-
-
-        
-        # Magnets
 
         # List with magnetometer readings
         def get_magnetometer_reading(self):
@@ -134,8 +126,6 @@ class Sensors():
 def main():
         test = Sensors()
         print(test.get_air_reading())
-        print(test.is_fire())
         print(test.get_magnetometer_reading())
-        print(test.is_magnet_over())
 
 #main()

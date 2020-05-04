@@ -2,6 +2,7 @@ import paho.mqtt.client as mqtt
 import time
 import ssl
 import json
+import requests
 
 host          = "node02.myqtthub.com"
 port          = 1883
@@ -35,10 +36,9 @@ def on_connect (client, userdata, flags, rc):
         print(json.dumps(sensor_fire))
         print()
 
-
         # Publish and retain a message describing this virtual Animal Sensor
         sensor_chicken = {"id":5, "name":"animal sensor", "type":"Software Chicken Detector", "isHostedBy":{"location":"Aberdeen"}}
-        client.publish("aberdeen/animalhouse/chicken/1/chickeninbed", json.dumps(sensor_chicken), retain=True, qos=2)
+        client.publish("aberdeen/animalhouse/chicken/1/inbed", json.dumps(sensor_chicken), retain=True, qos=2)
         print("======CHICKEN DETECTOR======")
         print(json.dumps(sensor_chicken))
         print()
@@ -59,6 +59,7 @@ def on_message(client, userdata, msg):
     observation = json.loads(jsonStr)
     time = observation["resultTime"]
     sensing = observation["property"]
+    place = observation["featureOfInterest"]
 
     # If message is from CO2 sensor
     if sensing == "CO2 presence":
@@ -67,6 +68,10 @@ def on_message(client, userdata, msg):
 
         # It is fire if the reading is over 4000 ppm
         fire = value > 4000
+
+        # If fire, send notification to Pushbullet
+        if fire:
+            fire_notification(place)
 
         publish_fire_status(time, fire)
 
@@ -79,8 +84,33 @@ def on_message(client, userdata, msg):
         over = []
         for i in values:
                 over.append(True) if i > 80 else over.append(False)
+        
+        # Send a notification that animals are not sleeping
+        # if any of the animals are not in the bed and it is late (9pm).
+        # Since magnetometer readings are received every minute, 
+        # if the time is 21:00 and we send a notification,
+        # it will be sent only once.
+        hours = int(time[11:13])
+        minutes = int(time[14:16])
 
+        if False in over and hours == 21 and minutes == 00:
+            bed_notification(place)
+        
         publish_chicken_status(time, over)
+
+# Send a notification that there is fire
+def fire_notification(place):
+    # IFTTT
+    r = requests.post('https://maker.ifttt.com/trigger/fire/with/key/dPwWgLf1G3f5ub9KZD-Ws', params={"value1":str(place),"value2":"none","value3":"none"})
+    print('Notification regarding fire sent')
+    print()
+
+# Send a notification if chicken are not in bed at night
+def bed_notification(place):
+    # IFTTT
+    r = requests.post('https://maker.ifttt.com/trigger/chicken_not_in_bed/with/key/dPwWgLf1G3f5ub9KZD-Ws', params={"value1":str(place),"value2":"none","value3":"none"})
+    print('Notification regarding awake chicken sent')
+    print()
 
 def publish_fire_status(time, status):
     print("...Publishing Fire Status...")
@@ -127,4 +157,4 @@ except KeyboardInterrupt:
 
 
 # Close connection
-client.disconnect ()
+client.disconnect()
