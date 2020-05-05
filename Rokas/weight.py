@@ -32,6 +32,8 @@ def monitor(weight):
     if((3000/100*20) > weight):
         print("Low food and water levels")
         print(round(weight, 1))
+    if((3000/100*20 < weight):
+	print("Food is more than enough ", round(weight, 1))
 
 hx = HX711(11, 12)
 
